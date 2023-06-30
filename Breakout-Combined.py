@@ -22,6 +22,27 @@ from collections import deque
 import random
 import time
 
+# %% Settings
+
+# Environment settings
+EPISODES = 15000
+
+# Exploration settings
+epsilon = 1  # starting epsilon
+EPSILON_DECAY = 0.998
+MIN_EPSILON = 0.1
+
+#  Stats settings
+SHOW_PREVIEW = True
+RENDER_PREVIEW = 5  # render every x episodes
+
+# %% Environment
+env = gym.make("BreakoutDeterministic-v4")
+
+SAMPLE_WIDTH = 84
+SAMPLE_HEIGHT = 84
+
+MODEL_NAME = "16x32-"
 
 # %% FILE 1: play.py
 # Convert image to greyscale, resize and normalise pixels
@@ -106,15 +127,19 @@ class Agent:
         self.minReplayMemSize = (
             4_000  # Min size of replay memory before training starts
         )
-        self.batchSize = 32  # How many samples are used for training
+        self.batchSize = 16  # How many samples are used for training, was 32
         self.updateEvery = 10  # Number of batches between updating target network
         self.discount = 0.95  # measure of how much we care about future reward over immediate reward
         self.actions = actions
 
         self.model = Model(width, height, self.actions)  # model to be trained
         self.model.compile(
-            optimizer=tf.keras.optimizers.RMSprop(
-                lr=self.learningRate, rho=0.95, epsilon=0.01
+            tf.keras.optimizers.Adam(
+                learning_rate=0.0025,
+                beta_1=EPSILON_DECAY,
+                beta_2=EPSILON_DECAY,
+                epsilon=epsilon,
+                amsgrad=False,
             ),
             loss=tf.keras.losses.Huber(),
             metrics=["accuracy"],
@@ -188,12 +213,9 @@ class Agent:
             y.append(action)
 
         # Fit on all minibatch and return loss and accuracy
-        metrics = self.model.fit(
+        metrics = self.model.train_on_batch(
             currentStates,
             np.array(y),
-            batch_size=self.batchSize,
-            verbose=0,
-            shuffle=False,
         )
 
         # Update target network counter every episode
@@ -207,17 +229,28 @@ class Agent:
 
         return metrics
 
-
 # %% File3 -> Model.py -> CNN model
 
 class Model(Model):
     def __init__(self, width, height, actions):
         super(Model, self).__init__()
+
+        self.optimizer = tf.keras.optimizers.Adam(
+            learning_rate=0.0025,
+            beta_1=EPSILON_DECAY,
+            beta_2=EPSILON_DECAY,
+            epsilon=epsilon,
+            amsgrad=False,
+        )
+
         self.conv1 = tf.keras.layers.Conv2D(
             16, [8, 8], strides=4, input_shape=(width, height, 4), activation="relu"
         )
+
         self.conv2 = tf.keras.layers.Conv2D(32, [4, 4], strides=2, activation="relu")
+
         self.flatten = tf.keras.layers.Flatten()
+
         self.dense1 = tf.keras.layers.Dense(512, activation="relu")
         self.dense2 = tf.keras.layers.Dense(actions, activation="linear")
 
@@ -227,32 +260,11 @@ class Model(Model):
         x = self.flatten(x)
         x = self.dense1(x)
         return self.dense2(x)
-    
+
+
 # %% File4 -> Breakout.py -> main driver code
-# %% Settings
+# Settings moved to beginning of file
 
-# Environment settings
-EPISODES = 15000
-
-# Exploration settings
-epsilon = 1  # starting epsilon
-EPSILON_DECAY = 0.998
-MIN_EPSILON = 0.1
-
-#  Stats settings
-SHOW_PREVIEW = True
-RENDER_PREVIEW = 5  # render every x episodes
-
-# %% Environment
-env = gym.make("BreakoutDeterministic-v4")
-
-SAMPLE_WIDTH = 84
-SAMPLE_HEIGHT = 84
-
-MODEL_NAME = "16x32-"
-
-
-# %% preprocess view using opencv2
 # Convert image to greyscale, resize and normalise pixels
 def preprocess(screen, width, height, targetWidth, targetHeight):
     # plt.imshow(screen)
@@ -265,26 +277,29 @@ def preprocess(screen, width, height, targetWidth, targetHeight):
     # plt.show()
     return screen
 
-
-# %%
 current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 train_log_dir = "logs/" + MODEL_NAME + current_time
 train_summary_writer = tf.summary.create_file_writer(train_log_dir)
 checkpoint_path = "checkpoints/cp-{episode:04d}.ckpt"
 checkpoint_dir = os.path.dirname(checkpoint_path)
 
-# %%
 agent = Agent(width=SAMPLE_WIDTH, height=SAMPLE_HEIGHT, actions=env.action_space.n)
 # agent.model.load_weights(tf.train.latest_checkpoint('checkpoints'))  # Uncomment to load from checkpoint
 
 average_reward = []
 
-# %% Iterate over episodes
+# Iterate over episodes
 
 # First set the per-episode logging to false
 tf.keras.utils.disable_interactive_logging()
 
-for episode in tqdm(range(EPISODES), ascii=True, unit="episodes", ncols=80, bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}{postfix}]'):
+for episode in tqdm(
+    range(EPISODES),
+    ascii=True,
+    unit="episodes",
+    ncols=80,
+    bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}{postfix}]",
+):
     average_loss = []
     average_accuracy = []
     episode_reward = 0
@@ -364,10 +379,10 @@ for episode in tqdm(range(EPISODES), ascii=True, unit="episodes", ncols=80, bar_
         current_state = new_state
         currentLives = info["lives"]  # update lives remaining
         step += 1
-    
+
     elapsed_time = time.time() - start_time
     eta = datetime.timedelta(seconds=((EPISODES - episode) * elapsed_time))
-    
+
     tqdm.write(f"ETA: {eta}")
 
     if len(average_reward) >= 5:

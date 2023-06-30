@@ -17,7 +17,7 @@ from agent import Agent
 # %% Settings
 
 # Environment settings
-EPISODES = 15000
+EPISODES = 15000 # change in Breakout-Combined!
 
 # Exploration settings
 epsilon = 1  # starting epsilon
@@ -74,8 +74,6 @@ for episode in tqdm(range(EPISODES), ascii=True, unit="episodes", ncols=80, bar_
     average_accuracy = []
     episode_reward = 0
     step = 1
-
-    start_time = time.time()
 
     # Reset environment and get initial state
     current_state = env.reset()
@@ -149,10 +147,6 @@ for episode in tqdm(range(EPISODES), ascii=True, unit="episodes", ncols=80, bar_
         currentLives = info["lives"]  # update lives remaining
         step += 1
 
-    elapsed_time = time.time() - start_time
-    eta = datetime.timedelta(seconds=((EPISODES - episode) * elapsed_time))
-    
-    tqdm.write(f"ETA: {eta}")
 
     if len(average_reward) >= 5:
         average_reward.pop(0)

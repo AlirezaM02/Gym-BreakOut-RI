@@ -5,6 +5,7 @@ import tensorflow as tf
 import numpy as np
 import random
 from collections import deque
+from breakout import EPSILON_DECAY, epsilon
 
 
 # %%
@@ -15,15 +16,19 @@ class Agent:
         self.minReplayMemSize = (
             4_000  # Min size of replay memory before training starts
         )
-        self.batchSize = 32  # How many samples are used for training
+        self.batchSize = 16  # How many samples are used for training, was 32
         self.updateEvery = 10  # Number of batches between updating target network
         self.discount = 0.95  # measure of how much we care about future reward over immediate reward
         self.actions = actions
 
         self.model = Model(width, height, self.actions)  # model to be trained
         self.model.compile(
-            optimizer=tf.keras.optimizers.RMSprop(
-                lr=self.learningRate, rho=0.95, epsilon=0.01
+            tf.keras.optimizers.Adam(
+                learning_rate=0.0025,
+                beta_1=EPSILON_DECAY,
+                beta_2=EPSILON_DECAY,
+                epsilon=epsilon,
+                amsgrad=False,
             ),
             loss=tf.keras.losses.Huber(),
             metrics=["accuracy"],
@@ -97,12 +102,9 @@ class Agent:
             y.append(action)
 
         # Fit on all minibatch and return loss and accuracy
-        metrics = self.model.fit(
+        metrics = self.model.train_on_batch(
             currentStates,
             np.array(y),
-            batch_size=self.batchSize,
-            verbose=0,
-            shuffle=False,
         )
 
         # Update target network counter every episode
