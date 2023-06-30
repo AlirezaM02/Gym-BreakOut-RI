@@ -18,8 +18,7 @@ from agent import Agent
 EPISODES = 15000
 
 # Exploration settings
-epsilon = 1  # starting epsolon
-# epsilon = 0.1  # starting epsolon
+epsilon = 1  # starting epsilon
 EPSILON_DECAY = 0.998
 MIN_EPSILON = 0.1
 
@@ -100,7 +99,7 @@ for episode in tqdm(range(EPISODES), ascii=True, unit="episodes"):
         episode_reward += reward
 
         # If life is lost then give negative reward
-        if info["ale.lives"] < currentLives:
+        if info["lives"] < currentLives:
             reward = -1
             done = True
 
@@ -138,7 +137,7 @@ for episode in tqdm(range(EPISODES), ascii=True, unit="episodes"):
             average_accuracy.append(metrics.history["accuracy"][0])
 
         current_state = new_state
-        currentLives = info["ale.lives"]  # update lives remaining
+        currentLives = info["lives"]  # update lives remaining
         step += 1
 
     if len(average_reward) >= 5:

@@ -78,10 +78,10 @@ def main():
             env.render()
 
             # If life is lost auto fire next ball
-            if info["ale.lives"] < currentLives:
+            if info["lives"] < currentLives:
                 env.step(1)
 
             current_state = new_state
-            currentLives = info["ale.lives"]  # update lives remaining
+            currentLives = info["lives"]  # update lives remaining
 
             time.sleep(1 / 30)  # lock framerate to aprox 30 fps
