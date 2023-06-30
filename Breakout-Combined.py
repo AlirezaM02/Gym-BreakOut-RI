@@ -25,7 +25,7 @@ import time
 # %% Settings
 
 # Environment settings
-EPISODES = 15000
+EPISODES = 1500
 
 # Exploration settings
 epsilon = 1  # starting epsilon
@@ -43,6 +43,7 @@ SAMPLE_WIDTH = 84
 SAMPLE_HEIGHT = 84
 
 MODEL_NAME = "16x32-"
+
 
 # %% FILE 1: play.py
 # Convert image to greyscale, resize and normalise pixels
@@ -119,6 +120,7 @@ def main_play():
 
 
 # %% File2 -> Agent.py -> Agent :)
+
 
 class Agent:
     def __init__(self, width, height, actions):
@@ -229,7 +231,9 @@ class Agent:
 
         return metrics
 
+
 # %% File3 -> Model.py -> CNN model
+
 
 class Model(Model):
     def __init__(self, width, height, actions):
@@ -265,6 +269,7 @@ class Model(Model):
 # %% File4 -> Breakout.py -> main driver code
 # Settings moved to beginning of file
 
+
 # Convert image to greyscale, resize and normalise pixels
 def preprocess(screen, width, height, targetWidth, targetHeight):
     # plt.imshow(screen)
@@ -276,6 +281,7 @@ def preprocess(screen, width, height, targetWidth, targetHeight):
     # plt.imshow(np.array(np.squeeze(screen)), cmap='gray')
     # plt.show()
     return screen
+
 
 current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 train_log_dir = "logs/" + MODEL_NAME + current_time
@@ -304,8 +310,6 @@ for episode in tqdm(
     average_accuracy = []
     episode_reward = 0
     step = 1
-
-    start_time = time.time()
 
     # Reset environment and get initial state
     current_state = env.reset()
@@ -379,11 +383,6 @@ for episode in tqdm(
         current_state = new_state
         currentLives = info["lives"]  # update lives remaining
         step += 1
-
-    elapsed_time = time.time() - start_time
-    eta = datetime.timedelta(seconds=((EPISODES - episode) * elapsed_time))
-
-    tqdm.write(f"ETA: {eta}")
 
     if len(average_reward) >= 5:
         average_reward.pop(0)
