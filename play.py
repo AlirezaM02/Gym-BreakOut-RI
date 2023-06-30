@@ -29,7 +29,6 @@ def preprocess(screen, width, height, targetWidth, targetHeight):
 
 # %%
 
-
 def main():
     agent = Agent(width=SAMPLE_WIDTH, height=SAMPLE_HEIGHT, actions=env.action_space.n)
 
@@ -75,7 +74,7 @@ def main():
                 )
             )
 
-            env.render()
+            env.render(mode="rgb_array")
 
             # If life is lost auto fire next ball
             if info["lives"] < currentLives:

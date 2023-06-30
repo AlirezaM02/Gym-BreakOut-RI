@@ -10,6 +10,8 @@ import cv2
 import matplotlib.pyplot as plt
 import gym
 import tensorflow as tf
+import time
+
 from agent import Agent
 
 # %% Settings
@@ -63,11 +65,17 @@ agent = Agent(width=SAMPLE_WIDTH, height=SAMPLE_HEIGHT, actions=env.action_space
 average_reward = []
 
 # %% Iterate over episodes
-for episode in tqdm(range(EPISODES), ascii=True, unit="episodes"):
+
+# First set the per-episode logging to false
+tf.keras.utils.disable_interactive_logging()
+
+for episode in tqdm(range(EPISODES), ascii=True, unit="episodes", ncols=80, bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}{postfix}]'):
     average_loss = []
     average_accuracy = []
     episode_reward = 0
     step = 1
+
+    start_time = time.time()
 
     # Reset environment and get initial state
     current_state = env.reset()
@@ -78,6 +86,7 @@ for episode in tqdm(range(EPISODES), ascii=True, unit="episodes"):
         SAMPLE_WIDTH,
         SAMPLE_HEIGHT,
     )
+    
     currentLives = 5  # starting lives for episode
 
     current_state = np.dstack(
@@ -123,7 +132,7 @@ for episode in tqdm(range(EPISODES), ascii=True, unit="episodes"):
         )
 
         if SHOW_PREVIEW and episode % RENDER_PREVIEW == 0:
-            env.render()
+            env.render(mode="rgb_array")
 
         # Every step we update replay memory and train main network
         # print(np.dstack((stateStack[0], stateStack[1], stateStack[2], stateStack[3])).shape)
@@ -139,6 +148,11 @@ for episode in tqdm(range(EPISODES), ascii=True, unit="episodes"):
         current_state = new_state
         currentLives = info["lives"]  # update lives remaining
         step += 1
+
+    elapsed_time = time.time() - start_time
+    eta = datetime.timedelta(seconds=((EPISODES - episode) * elapsed_time))
+    
+    tqdm.write(f"ETA: {eta}")
 
     if len(average_reward) >= 5:
         average_reward.pop(0)
