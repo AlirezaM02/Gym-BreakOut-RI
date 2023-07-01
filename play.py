@@ -8,7 +8,7 @@ from agent import Agent
 import time
 
 # %%
-env = gym.make("BreakoutDeterministic-v4")
+env = gym.make("Breakout-v4")
 
 # %%
 SAMPLE_WIDTH = 84

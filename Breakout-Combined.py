@@ -1,7 +1,7 @@
 """
 Alireza Mirzaei - AI project
 An RI model for playing Breakout Atari game
-29th June 2023 
+29th June 2023
 """
 
 # %% Imports
@@ -25,7 +25,7 @@ import time
 # %% Settings
 
 # Environment settings
-EPISODES = 1500
+EPISODES = 300
 
 # Exploration settings
 epsilon = 1  # starting epsilon
@@ -37,7 +37,7 @@ SHOW_PREVIEW = True
 RENDER_PREVIEW = 5  # render every x episodes
 
 # %% Environment
-env = gym.make("BreakoutDeterministic-v4")
+env = gym.make("Breakout-v4")
 
 SAMPLE_WIDTH = 84
 SAMPLE_HEIGHT = 84
@@ -46,6 +46,8 @@ MODEL_NAME = "16x32-"
 
 
 # %% FILE 1: play.py
+
+
 # Convert image to greyscale, resize and normalise pixels
 def preprocess(screen, width, height, targetWidth, targetHeight):
     screen = cv2.cvtColor(screen, cv2.COLOR_BGR2GRAY)
@@ -56,7 +58,7 @@ def preprocess(screen, width, height, targetWidth, targetHeight):
 
 
 def main_play():
-    env = gym.make("BreakoutDeterministic-v4")
+    env = gym.make("Breakout-v4")
 
     SAMPLE_WIDTH = 84
     SAMPLE_HEIGHT = 84
@@ -125,19 +127,19 @@ def main_play():
 class Agent:
     def __init__(self, width, height, actions):
         self.learningRate = 0.0025
-        self.replayMemorySize = 40_000  # Number of states that are kept for training
+        self.replayMemorySize = 10_000  # Number of states that are kept for training
         self.minReplayMemSize = (
-            4_000  # Min size of replay memory before training starts
+            1_000  # Min size of replay memory before training starts
         )
-        self.batchSize = 16  # How many samples are used for training, was 32
+        self.batchSize = 32  # How many samples are used for training, was 32
         self.updateEvery = 10  # Number of batches between updating target network
-        self.discount = 0.95  # measure of how much we care about future reward over immediate reward
+        self.discount = 0.99  # measure of how much we care about future reward over immediate reward
         self.actions = actions
 
         self.model = Model(width, height, self.actions)  # model to be trained
         self.model.compile(
             tf.keras.optimizers.Adam(
-                learning_rate=0.0025,
+                learning_rate=self.learningRate,
                 beta_1=EPSILON_DECAY,
                 beta_2=EPSILON_DECAY,
                 epsilon=epsilon,
@@ -215,9 +217,12 @@ class Agent:
             y.append(action)
 
         # Fit on all minibatch and return loss and accuracy
-        metrics = self.model.train_on_batch(
+        metrics = self.model.fit(
             currentStates,
             np.array(y),
+            batch_size=self.batchSize,
+            verbose=0,
+            shuffle=False,
         )
 
         # Update target network counter every episode
@@ -290,7 +295,7 @@ checkpoint_path = "checkpoints/cp-{episode:04d}.ckpt"
 checkpoint_dir = os.path.dirname(checkpoint_path)
 
 agent = Agent(width=SAMPLE_WIDTH, height=SAMPLE_HEIGHT, actions=env.action_space.n)
-# agent.model.load_weights(tf.train.latest_checkpoint('checkpoints'))  # Uncomment to load from checkpoint
+agent.model.load_weights(tf.train.latest_checkpoint('checkpoints'))  # Uncomment to load from checkpoint
 
 average_reward = []
 

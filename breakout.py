@@ -29,7 +29,7 @@ SHOW_PREVIEW = True
 RENDER_PREVIEW = 5  # render every x episodes
 
 # %% Environment
-env = gym.make("BreakoutDeterministic-v4")
+env = gym.make("Breakout-v4")
 
 SAMPLE_WIDTH = 84
 SAMPLE_HEIGHT = 84
@@ -133,7 +133,9 @@ for episode in tqdm(range(EPISODES), ascii=True, unit="episodes", ncols=80, bar_
             env.render(mode="rgb_array")
 
         # Every step we update replay memory and train main network
+        
         # print(np.dstack((stateStack[0], stateStack[1], stateStack[2], stateStack[3])).shape)
+        
         agent.update_replay_memory(
             (current_state, agent.get_qs(current_state), reward, new_state, done)
         )
