@@ -78,7 +78,7 @@ def main():
 
             # If life is lost auto fire next ball
             if info["lives"] < currentLives:
-                env.step(1)
+                env.step(2)
 
             current_state = new_state
             currentLives = info["lives"]  # update lives remaining
